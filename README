@@ -14,6 +14,9 @@ INSTALLATION
         make install
         make initdb # first time only
 
+	the "make initdb" adds the scrips to the database, so be sure to run it the first
+	time or nothing will happen.
+
     with RT 3.8 or later, you need to update "Plugins" configuration:
 
         Set( @Plugins, qw(... RT::Extension::Zabbix) );
@@ -26,6 +29,15 @@ INSTALLATION
         Set($ZabbixMergeTickets, 1); # merge into the newest ticket.
         Set($ZabbixMergeTickets, -1); # merge into the oldest ticket.
         Set($ZabbixResolvedStatus, "resolved");
+
+	you may also need to enable full text searching to get the hostname
+	from the body of the ticket:
+
+		Set(%FullTextSearch,
+	    	Enable => 1,
+		   Indexed => 0,
+		);
+
 
 AUTHOR
 

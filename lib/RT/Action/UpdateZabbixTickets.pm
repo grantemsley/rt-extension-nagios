@@ -2,6 +2,7 @@ package RT::Action::UpdateZabbixTickets;
 
 use strict;
 use warnings;
+use Data::Dumper;
 
 use base qw(RT::Action);
 
@@ -23,29 +24,34 @@ sub Commit {
     my $new_ticket_id = $new_ticket->id;
 
     my $subject = $attachment->GetHeader('Subject');
+	$RT::Logger->info("Zabbix parsing message $subject");
 	my $body = $attachment->Content;
     return unless $subject;
 
     if ((my($type, $trigger) = $subject =~ m{(OK): (.*)}i) && (my ($host) = $body =~ m{Host: (.*)}i)) {
         $RT::Logger->info("Found a recovery message, extracted type, trigger and host with values $type, $trigger, $host");
 
-		# Search for PROBLEM tickets
+		# Search for tickets
 		my $tickets = RT::Tickets->new( $self->CurrentUser );
         $tickets->LimitQueue( VALUE => $new_ticket->Queue )
           unless RT->Config->Get('ZabbixSearchAllQueues');
 
-		# Limit to problem tickets with this trigger
-		my $subject = "PROBLEM: " . $trigger;
-		$tickets->LimitSuject(
-			VALUE => $subject,
+		# Limit to tickets with this trigger
+		$tickets->LimitSubject(
+			VALUE => "PROBLEM: " . $trigger,
 			OPERATOR => '='
 		);
+		$tickets->LimitSubject(
+			VALUE => "OK: " . $trigger,
+			OPERATOR => '='
+		);
+
 
 		# Limit to tickets containing the right host
 		my $body = "Host: " . $host;
 		$tickets->LimitContent(
 			VALUE => $body,
-			OPERATOR => '='
+			OPERATOR => 'LIKE'
 		);
 
 		# And limit to active tickets
@@ -69,6 +75,7 @@ sub Commit {
             $merged_ticket = $tickets->Next;
 
             while ( my $ticket = $tickets->Next ) {
+				$RT::Logger->info("Merging " . $ticket->id . " into " . $merged_ticket->id);
                 my ( $ret, $msg ) = $ticket->MergeInto( $merged_ticket->id );
                 if ( !$ret ) {
                     $RT::Logger->error( 'failed to merge ticket '
@@ -80,7 +87,7 @@ sub Commit {
             }
 
             if ( not $merged_ticket or not $merged_ticket->id ) {
-                $RT::Logger->error( 'Recovery ticket with no initial ticket: $subject' );
+                $RT::Logger->error( "Recovery ticket with no initial ticket: $subject" );
                 $merged_ticket = $new_ticket;
             }
             my ( $ret, $msg ) = $merged_ticket->SetStatus($resolved);
