@@ -1,4 +1,4 @@
 use inc::Module::Install;
-RTx('RT-Extension-Nagios');
-all_from('lib/RT/Extension/Nagios.pm');
+RTx('RT-Extension-Zabbix');
+all_from('lib/RT/Extension/Zabbix.pm');
 &WriteAll;

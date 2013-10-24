@@ -1,11 +1,11 @@
 NAME
-    RT::Extension::Nagios - Merge and resolve Nagios tickets
+    RT::Extension::Zabbix - Merge and resolve Zabbix tickets
 
 DESCRIPTION
 
-    Used to merge and resolve Nagios tickets automatically.
-    Based on http://wiki.bestpractical.com/view/AutoCloseOnNagiosRecoveryMessages,
-    thanks, Todd Chapman!
+    Used to merge and resolve Zabbix tickets automatically.
+    Based on https://github.com/bestpractical/rt-extension-nagios, which is in turn 
+    based on http://wiki.bestpractical.com/view/AutoCloseOnZabbixRecoveryMessages
 
 INSTALLATION
 
@@ -16,24 +16,22 @@ INSTALLATION
 
     with RT 3.8 or later, you need to update "Plugins" configuration:
 
-        Set( @Plugins, qw(... RT::Extension::Nagios) );
+        Set( @Plugins, qw(... RT::Extension::Zabbix) );
 
     below are the extra options:
-    (check out lib/RT/Extension/Nagios.pm if you are confused):
+    (check out lib/RT/Extension/Zabbix.pm if you are confused):
 
-        Set($NagiosSearchAllQueues, 1);
-        Set($NagiosMergeTickets, 0); # false, don't merge
-        Set($NagiosMergeTickets, 1); # merge into the newest ticket.
-        Set($NagiosMergeTickets, -1); # merge into the oldest ticket.
-        Set($NagiosResolvedStatus, "resolved");
+        Set($ZabbixSearchAllQueues, 1);
+        Set($ZabbixMergeTickets, 0); # false, don't merge
+        Set($ZabbixMergeTickets, 1); # merge into the newest ticket.
+        Set($ZabbixMergeTickets, -1); # merge into the oldest ticket.
+        Set($ZabbixResolvedStatus, "resolved");
 
 AUTHOR
 
-sunnavy  C<< <sunnavy@bestpractical.com> >>
+Grant Emsley  C<< <grant@emsley.ca> >>
 
 LICENCE AND COPYRIGHT
-
-RT-Extension-Nagios is Copyright 2009-2011 Best Practical Solutions, LLC.
 
 This program is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself.

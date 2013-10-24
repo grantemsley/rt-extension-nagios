@@ -2,9 +2,9 @@
 
 @Scrips = (
     {
-        Description    => 'Update Nagios Tickets', # loc
+        Description    => 'Update Zabbix Tickets', # loc
         ScripCondition => 'On Create', # loc
-        ScripAction    => 'Update Nagios Tickets', # loc
+        ScripAction    => 'Update Zabbix Tickets', # loc
         Template       => 'Blank',
     },
 
@@ -12,9 +12,9 @@
 
 @ScripActions = (
     {
-        Name        => 'Update Nagios Tickets',    # loc
-        Description => 'Merge or Resolve Nagios Tickets',    # loc
-        ExecModule  => 'UpdateNagiosTickets',
+        Name        => 'Update Zabbix Tickets',    # loc
+        Description => 'Merge or Resolve Zabbix Tickets',    # loc
+        ExecModule  => 'UpdateZabbixTickets',
     }
 
 );

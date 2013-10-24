@@ -1,7 +1,7 @@
 ---
-abstract: 'Merge and resolve Nagios tickets'
+abstract: 'Merge and resolve Zabbix tickets'
 author:
-  - 'sunnavy  C<< <sunnavy@bestpractical.com> >>'
+  - 'sunnavy  C<< <grant@emsley.ca> >>'
 build_requires:
   ExtUtils::MakeMaker: 6.36
 configure_requires:
@@ -13,7 +13,7 @@ license: perl
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
   version: 1.4
-name: RT-Extension-Nagios
+name: RT-Extension-Zabbix
 no_index:
   directory:
     - etc

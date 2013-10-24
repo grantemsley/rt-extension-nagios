@@ -1,11 +1,11 @@
 use warnings;
 use strict;
 
-package RT::Extension::Nagios;
+package RT::Extension::Zabbix;
 
 =head1 NAME
 
-RT::Extension::Nagios - Merge and resolve Nagios tickets
+RT::Extension::Zabbix - Merge and resolve Zabbix tickets
 
 =cut
 
@@ -15,65 +15,56 @@ our $VERSION = '0.07';
 
 =head1 DESCRIPTION
 
-Based on http://wiki.bestpractical.com/view/AutoCloseOnNagiosRecoveryMessages,
-thanks, Todd Chapman!
+Zabbix is a monitoring system.  It's email alerts can be piped to request tracker. This extension automatically merges and resolves issues when it receives the OK alert.
 
-Nagios( L<http://www.nagios.org> ) is a powerful monitoring system that enables
-organizations to identify and resolve IT infrastructure problems before they
-affect critical business processes.
+=head1 ZABBIX SETUP
 
-Once you create Nagios tickets by piping Nagio's email notifications, this
-extension helps you merge and resolve them.
+Notifications need to be setup to go from zabbix to your request tracker queue.
 
-We identify email by its subject, so please keep it as the
-default one or alike, i.e. subject should pass the regex:
+The emails from Zabbix must have the default subject line of:
+ {TRIGGER.STATUS}: {TRIGGER.NAME}
 
-C<<< qr{(PROBLEM|RECOVERY|ACKNOWLEDGEMENT)\s+(Service|Host) Alert: ([^/]+)/?(.*)\s+is\s+(\w+)}i >>>
+If the subject line is changed, this extension won't be able to match them.
 
-e.g.  "PROBLEM Service Alert: localhost/Root Partition is WARNING":
+The body of the email must also contain:
+ Host: {HOST.NAME}
 
-There are 5 useful parts in subject( we call them type, category, host,
-problem_type and problem_severity ):
+The combination of {TRIGGER.NAME} in the subject and {HOST.NAME} in the body will be used to uniquely identify the alerts.
 
-PROBLEM, Service, localhost, Root Partition and WARNING
-
-( Currently, we don't make use of problem_severity actually )
+=head1 REQUEST TRACKER CONFIGURATION
 
 After the new ticket is created, the following is done:
 
 1. find all the other active tickets in the same queue( unless
-C<<< RT->Config->Get('NagiosSearchAllQueues') >>> is true, which will cause
-to search all the queues ) with the same values of $category, $host and
-$problem_type.
+C<<< RT->Config->Get('ZabbixSearchAllQueues') >>> is true, which will cause
+to search all the queues ) with the same values of $triggerstatus and $host.
 
-2. if C<< RT->Config->Get('NagiosMergeTickets') >> is true, merge all of
-them. if $type is 'RECOVERY', resolve the merged ticket.
+2. if C<< RT->Config->Get('ZabbixMergeTickets') >> is true, merge all of
+them. if $triggerstatus is 'OK', resolve the merged ticket.
 
-if C<< RT->Config->Get('NagiosMergeTickets') >> is false and $type is
-'RECOVERY', resolve all them.
+if C<< RT->Config->Get('ZabbixMergeTickets') >> is false and $triggerstatus is
+'OK', resolve all them.
 
 NOTE:
 
-config items like C<NagiosSearchAllQueues> and C<NagiosMergeTickets> can be set
+config items like C<ZabbixSearchAllQueues> and C<ZabbixMergeTickets> can be set
 in etc/RT_SiteConfig.pm like this:
 
-    Set($NagiosSearchAllQueues, 1); # true
-    Set($NagiosMergeTickets, 0); # false, don't merge
-    Set($NagiosMergeTickets, 1); # merge into the newest ticket.
-    Set($NagiosMergeTickets, -1); # merge into the oldest ticket.
+    Set($ZabbixSearchAllQueues, 1); # true
+    Set($ZabbixMergeTickets, 0); # false, don't merge
+    Set($ZabbixMergeTickets, 1); # merge into the newest ticket.
+    Set($ZabbixMergeTickets, -1); # merge into the oldest ticket.
 
 by default, tickets will be resolved with status C<resolved>, you can
-customize this via config item C<NagiosResolvedStatus>, e.g.
+customize this via config item C<ZabbixResolvedStatus>, e.g.
 
-    Set($NagiosResolvedStatus, "recovered");
+    Set($ZabbixResolvedStatus, "recovered");
 
 =head1 AUTHOR
 
-sunnavy  C<< <sunnavy@bestpractical.com> >>
+Grant Emsley  C<< <grant@emsley.ca> >>
 
 =head1 LICENCE AND COPYRIGHT
-
-RT-Extension-Nagios is Copyright 2009-2011 Best Practical Solutions, LLC.
 
 This program is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself.

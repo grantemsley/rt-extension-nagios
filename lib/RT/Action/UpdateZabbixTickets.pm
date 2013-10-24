@@ -1,4 +1,4 @@
-package RT::Action::UpdateNagiosTickets;
+package RT::Action::UpdateZabbixTickets;
 
 use strict;
 use warnings;
@@ -23,26 +23,32 @@ sub Commit {
     my $new_ticket_id = $new_ticket->id;
 
     my $subject = $attachment->GetHeader('Subject');
+	my $body = $attachment->Content;
     return unless $subject;
-    if ( my ( $type, $category, $host, $problem_type, $problem_severity ) =
-        $subject =~
-m{(PROBLEM|RECOVERY|ACKNOWLEDGEMENT)\s+(Service|Host) Alert: ([^/]+)/?(.*)\s+is\s+(\w+)}i
-      )
-    {
-        $problem_type ||= '';
-        $RT::Logger->info(
-"Extracted type, category, host, problem_type and problem_severity from
-subject with values $type, $category, $host, $problem_type and $problem_severity"
-        );
-        my $tickets = RT::Tickets->new( $self->CurrentUser );
+
+    if ((my($type, $trigger) = $subject =~ m{(OK): (.*)}i) && (my ($host) = $body =~ m{Host: (.*)}i)) {
+        $RT::Logger->info("Found a recovery message, extracted type, trigger and host with values $type, $trigger, $host");
+
+		# Search for PROBLEM tickets
+		my $tickets = RT::Tickets->new( $self->CurrentUser );
         $tickets->LimitQueue( VALUE => $new_ticket->Queue )
-          unless RT->Config->Get('NagiosSearchAllQueues');
-        my $subject = "$category Alert: $host"
-              . ( $problem_type ? "/$problem_type" : '' );
-        $tickets->LimitSubject(
-            VALUE => $subject,
-            OPERATOR => 'LIKE',
-        );
+          unless RT->Config->Get('ZabbixSearchAllQueues');
+
+		# Limit to problem tickets with this trigger
+		my $subject = "PROBLEM: " . $trigger;
+		$tickets->LimitSuject(
+			VALUE => $subject,
+			OPERATOR => '='
+		);
+
+		# Limit to tickets containing the right host
+		my $body = "Host: " . $host;
+		$tickets->LimitContent(
+			VALUE => $body,
+			OPERATOR => '='
+		);
+
+		# And limit to active tickets
         my @active = RT::Queue->ActiveStatusArray();
         for my $active (@active) {
             $tickets->LimitStatus(
@@ -51,9 +57,9 @@ subject with values $type, $category, $host, $problem_type and $problem_severity
             );
         }
 
-        my $resolved = RT->Config->Get('NagiosResolvedStatus') || 'resolved';
+        my $resolved = RT->Config->Get('ZabbixResolvedStatus') || 'resolved';
 
-        if ( my $merge_type = RT->Config->Get('NagiosMergeTickets') ) {
+        if ( my $merge_type = RT->Config->Get('ZabbixMergeTickets') ) {
             my $merged_ticket;
 
             $tickets->OrderBy(
@@ -73,20 +79,18 @@ subject with values $type, $category, $host, $problem_type and $problem_severity
                 }
             }
 
-            if ( uc $type eq 'RECOVERY' ) {
-                if ( not $merged_ticket or not $merged_ticket->id ) {
-                    $RT::Logger->error( 'Recovery ticket with no initial ticket: $subject' );
-                    $merged_ticket = $new_ticket;
-                }
-                my ( $ret, $msg ) = $merged_ticket->SetStatus($resolved);
-                if ( !$ret ) {
-                    $RT::Logger->error( 'failed to resolve ticket '
-                          . $merged_ticket->id
-                          . ":$msg" );
-                }
+            if ( not $merged_ticket or not $merged_ticket->id ) {
+                $RT::Logger->error( 'Recovery ticket with no initial ticket: $subject' );
+                $merged_ticket = $new_ticket;
+            }
+            my ( $ret, $msg ) = $merged_ticket->SetStatus($resolved);
+            if ( !$ret ) {
+                $RT::Logger->error( 'failed to resolve ticket '
+                      . $merged_ticket->id
+                      . ":$msg" );
             }
         }
-        elsif ( uc $type eq 'RECOVERY' ) {
+        else {
             while ( my $ticket = $tickets->Next ) {
                 my ( $ret, $msg ) = $ticket->Comment(
                     Content => 'going to be resolved by ' . $new_ticket_id,
@@ -113,3 +117,4 @@ subject with values $type, $category, $host, $problem_type and $problem_severity
 }
 
 1;
+
