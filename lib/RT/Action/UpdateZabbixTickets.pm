@@ -46,14 +46,6 @@ sub Commit {
 			OPERATOR => '='
 		);
 
-
-		# Limit to tickets containing the right host
-		my $body = "Host: " . $host;
-		$tickets->LimitContent(
-			VALUE => $body,
-			OPERATOR => 'LIKE'
-		);
-
 		# And limit to active tickets
         my @active = RT::Queue->ActiveStatusArray();
         for my $active (@active) {
